@@ -1,0 +1,117 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (UID)
+    // Fields:
+    //   - uid: string (required)
+    //   - name: string (required)
+    //   - email: string (required)
+    //   - avatar: string (optional)
+    //   - status: string (enum: online, offline)
+    //   - lastSeen: timestamp
+    //   - createdAt: timestamp
+    //
+    // Collection: chats
+    // Document ID: chatId
+    // Fields:
+    //   - members: list (required)
+    //   - isGroup: bool (required)
+    //   - name: string (optional)
+    //   - lastMessage: string
+    //   - lastUpdated: timestamp
+    //   - unread: map
+    //
+    // Collection: messages
+    // Document ID: messageId
+    // Fields:
+    //   - chatId: string (required)
+    //   - senderId: string (required)
+    //   - text: string (required, max 1000 chars)
+    //   - timestamp: timestamp (required)
+    //   - reactions: map (optional)
+    //
+    // Collection: stories
+    // Document ID: storyId
+    // Fields:
+    //   - userId: string (required)
+    //   - imageUrl: string (required)
+    //   - timestamp: timestamp (required)
+    //   - expiresAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // Helper Functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isMemberOfChat(chatId) {
+      return isAuthenticated() && request.auth.uid in get(/databases/$(database)/documents/chats/$(chatId)).data.members;
+    }
+
+    function isValidUser(data) {
+      return data.keys().hasAll(['uid', 'name', 'email']) &&
+             data.uid is string && data.uid == request.auth.uid &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.email is string && data.email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidMessage(data) {
+      return data.keys().hasAll(['chatId', 'senderId', 'text', 'timestamp']) &&
+             data.chatId is string &&
+             data.senderId == request.auth.uid &&
+             data.text is string && data.text.size() > 0 && data.text.size() <= 1000 &&
+             data.timestamp == request.time &&
+             (!('reactions' in data) || data.reactions is map);
+    }
+
+    function isValidStory(data) {
+      return data.keys().hasAll(['userId', 'imageUrl', 'timestamp', 'expiresAt']) &&
+             data.userId == request.auth.uid &&
+             data.imageUrl is string &&
+             data.timestamp == request.time &&
+             data.expiresAt is timestamp;
+    }
+
+    function isValidReactionUpdate(data, oldData) {
+      let affectedKeys = data.diff(oldData).affectedKeys();
+      return affectedKeys.hasOnly(['reactions']) &&
+             data.reactions is map;
+    }
+
+    // Rules
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data);
+    }
+
+    match /chats/{chatId} {
+      allow read: if isAuthenticated() && request.auth.uid in resource.data.members;
+      allow create: if isAuthenticated() && request.auth.uid in request.resource.data.members;
+      allow update: if isAuthenticated() && request.auth.uid in resource.data.members;
+    }
+
+    match /messages/{messageId} {
+      allow read: if isAuthenticated() && isMemberOfChat(resource.data.chatId);
+      allow create: if isAuthenticated() && isMemberOfChat(request.resource.data.chatId) && isValidMessage(request.resource.data);
+      allow update: if isAuthenticated() && isMemberOfChat(resource.data.chatId) && isValidReactionUpdate(request.resource.data, resource.data);
+      allow delete: if false;
+    }
+
+    match /stories/{storyId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated() && isValidStory(request.resource.data);
+      allow delete: if isAuthenticated() && resource.data.userId == request.auth.uid;
+    }
+  }
+}

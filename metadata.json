@@ -1,0 +1,5 @@
+{
+  "name": "Conversa - Real-time Messenger",
+  "description": "A modern, real-time messaging application built with React, Firebase, and Tailwind CSS.",
+  "requestFramePermissions": []
+}

@@ -1,0 +1,76 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "A user of the messenger app.",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user." },
+        "name": { "type": "string", "description": "Display name of the user." },
+        "email": { "type": "string", "description": "Email address of the user." },
+        "avatar": { "type": "string", "description": "URL to the user's avatar image." },
+        "status": { "type": "string", "enum": ["online", "offline"], "description": "Current presence status." },
+        "lastSeen": { "type": "string", "format": "date-time", "description": "Last time the user was active." },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the user account was created." }
+      },
+      "required": ["uid", "name", "email"]
+    },
+    "Chat": {
+      "title": "Chat",
+      "description": "A conversation between users.",
+      "type": "object",
+      "properties": {
+        "members": { "type": "array", "items": { "type": "string" }, "description": "UIDs of users in the chat." },
+        "isGroup": { "type": "boolean", "description": "Whether this is a group chat." },
+        "name": { "type": "string", "description": "Name of the group chat (if applicable)." },
+        "lastMessage": { "type": "string", "description": "The last message sent in this chat." },
+        "lastUpdated": { "type": "string", "format": "date-time", "description": "Timestamp of the last message." },
+        "unread": { "type": "object", "description": "Map of user UIDs to unread message counts." }
+      },
+      "required": ["members", "isGroup"]
+    },
+    "Message": {
+      "title": "Message",
+      "description": "A single message in a chat.",
+      "type": "object",
+      "properties": {
+        "chatId": { "type": "string", "description": "ID of the chat this message belongs to." },
+        "senderId": { "type": "string", "description": "UID of the user who sent the message." },
+        "text": { "type": "string", "description": "The content of the message." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the message was sent." },
+        "reactions": { "type": "object", "description": "Map of emoji to array of user UIDs." }
+      },
+      "required": ["chatId", "senderId", "text", "timestamp"]
+    },
+    "Story": {
+      "title": "Story",
+      "description": "A temporary post visible to all users.",
+      "type": "object",
+      "properties": {
+        "userId": { "type": "string", "description": "UID of the user who posted the story." },
+        "imageUrl": { "type": "string", "description": "URL of the story image." },
+        "timestamp": { "type": "string", "format": "date-time", "description": "When the story was posted." },
+        "expiresAt": { "type": "string", "format": "date-time", "description": "When the story should expire." }
+      },
+      "required": ["userId", "imageUrl", "timestamp", "expiresAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data."
+    },
+    "/chats/{chatId}": {
+      "schema": "Chat",
+      "description": "Chat metadata."
+    },
+    "/messages/{messageId}": {
+      "schema": "Message",
+      "description": "Individual messages."
+    },
+    "/stories/{storyId}": {
+      "schema": "Story",
+      "description": "Temporary user stories."
+    }
+  }
+}

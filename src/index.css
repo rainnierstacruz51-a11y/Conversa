@@ -1,0 +1,48 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+@layer base {
+  body {
+    @apply bg-[#0a0f14] text-[#f0f4f8];
+  }
+}
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: #2a3544;
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: #5a6a7a;
+  }
+
+  .message-bubble-own {
+    @apply bg-[#00d4aa] text-[#0a0f14] rounded-2xl rounded-br-none shadow-sm;
+  }
+
+  .message-bubble-other {
+    @apply bg-[#1a232e] text-[#f0f4f8] border border-[#2a3544] rounded-2xl rounded-bl-none shadow-sm;
+  }
+
+  .glass-panel {
+    @apply bg-[#111820]/80 backdrop-blur-md border border-[#2a3544];
+  }
+
+  .chat-item-active {
+    @apply bg-[#00d4aa]/10 border-l-4 border-l-[#00d4aa] shadow-inner;
+  }
+}
